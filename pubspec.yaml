@@ -15,10 +15,11 @@ dependencies:
   firebase_auth: ^6.1.0
   firebase_messaging: ^16.0.0
   flutter_local_notifications: ^18.0.0
+  flutter_launcher_icons: ^0.13.1
   url_launcher: ^6.3.2
   provider: ^6.1.2
   dartz: ^0.10.1
-  youtube_player_iframe: ^5.1.2
+  youtube_player_flutter: ^9.0.1
   http: ^1.6.0
 
 dev_dependencies:

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:youtube_player_iframe/youtube_player_iframe.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import '../../../usuario/widgets/painel_usuario.dart';
 
 class ExercicioVideoPagina extends StatefulWidget {
@@ -20,138 +20,134 @@ class ExercicioVideoPagina extends StatefulWidget {
   State<ExercicioVideoPagina> createState() => _ExercicioVideoPaginaState();
 }
 
-class _ExercicioVideoPaginaState extends State<ExercicioVideoPagina>
-    with WidgetsBindingObserver {
+class _ExercicioVideoPaginaState extends State<ExercicioVideoPagina> {
   late YoutubePlayerController _controller;
-  double? _ultimaPosicao;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
 
-    _controller = YoutubePlayerController.fromVideoId(
-      videoId: widget.urlVideo,
-      params: const YoutubePlayerParams(
-        showControls: true,
-        strictRelatedVideos: true,
-        showFullscreenButton: false,
-        playsInline: true,
+    _controller = YoutubePlayerController(
+      initialVideoId: widget.urlVideo,
+      flags: const YoutubePlayerFlags(
+        autoPlay: false,
+        mute: false,
+        disableDragSeek: false,
+        controlsVisibleAtStart: true,
+        forceHD: false,
+        enableCaption: true,
       ),
     );
   }
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    _controller.close();
+    _controller.dispose();
     super.dispose();
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) async {
-    if (state == AppLifecycleState.inactive ||
-        state == AppLifecycleState.paused) {
-      final pos = await _controller.currentTime;
-      _ultimaPosicao = pos;
-    } else if (state == AppLifecycleState.resumed && _ultimaPosicao != null) {
-      _controller.seekTo(seconds: _ultimaPosicao!);
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF1B2B2A),
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        title: Text(widget.titulo),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
+    return YoutubePlayerBuilder(
+      player: YoutubePlayer(
+        controller: _controller,
+        showVideoProgressIndicator: true,
       ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: const [
-            DrawerHeader(
-              decoration: BoxDecoration(color: Color(0xFF1B2B2A)),
-              child: Text(
-                "Menu",
-                style: TextStyle(color: Colors.white, fontSize: 20),
-              ),
+      builder: (context, player) {
+        return Scaffold(
+          backgroundColor: const Color(0xFF1B2B2A),
+          appBar: AppBar(
+            backgroundColor: Colors.black,
+            title: Text(widget.titulo),
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
             ),
-            ListTile(
-              leading: Icon(Icons.home),
-              title: Text("Início"),
+          ),
+          drawer: Drawer(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: const [
+                DrawerHeader(
+                  decoration: BoxDecoration(color: Color(0xFF1B2B2A)),
+                  child: Text(
+                    "Menu",
+                    style: TextStyle(color: Colors.white, fontSize: 20),
+                  ),
+                ),
+                ListTile(
+                  leading: Icon(Icons.home),
+                  title: Text("Início"),
+                ),
+                ListTile(
+                  leading: Icon(Icons.settings),
+                  title: Text("Configurações"),
+                ),
+              ],
             ),
-            ListTile(
-              leading: Icon(Icons.settings),
-              title: Text("Configurações"),
+          ),
+          body: SingleChildScrollView(
+            child: Column(
+              children: [
+                const SizedBox(height: 16),
+
+                /// PLAYER AQUI
+                Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: player,
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                Text(
+                  widget.titulo,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                Text(
+                  widget.subtitulo,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 16,
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+              ],
             ),
-          ],
-        ),
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: YoutubePlayer(
-                    controller: _controller,
-                    aspectRatio: 16 / 9,
+          ),
+          bottomNavigationBar: Container(
+            height: 70,
+            color: const Color(0xFF2E3D3C),
+            child: Center(
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(100),
+                  splashColor: Colors.white24,
+                  highlightColor: Colors.white10,
+                  onTap: () => PainelUsuario.abrir(context),
+                  child: const Padding(
+                    padding: EdgeInsets.all(12.0),
+                    child: Icon(
+                      Icons.person,
+                      color: Colors.white70,
+                      size: 32,
+                    ),
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 16),
-            Text(
-              widget.titulo,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Text(
-              widget.subtitulo,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 16,
-              ),
-            ),
-            const SizedBox(height: 24),
-          ],
-        ),
-      ),
-      bottomNavigationBar: Container(
-        height: 70,
-        color: const Color(0xFF2E3D3C),
-        child: Center(
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(100),
-              splashColor: Colors.white24,
-              highlightColor: Colors.white10,
-              onTap: () => PainelUsuario.abrir(context),
-              child: const Padding(
-                padding: EdgeInsets.all(12.0),
-                child: Icon(
-                  Icons.person,
-                  color: Colors.white70,
-                  size: 32,
-                ),
-              ),
-            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

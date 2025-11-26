@@ -64,58 +64,6 @@ class TreinoPagina extends StatelessWidget {
         elevation: 0,
         title: Text("Nível ${nivel[0].toUpperCase()}${nivel.substring(1)}"),
       ),
-      drawer: Drawer(
-        backgroundColor: const Color(0xFF2E3D3C),
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(
-                color: Color(0xFF1B2B2A),
-              ),
-              child: Center(
-                child: Text(
-                  'Menu Principal',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.home, color: Colors.white),
-              title: const Text('Início', style: TextStyle(color: Colors.white)),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/home');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.fitness_center, color: Colors.white),
-              title: const Text('Meus Treinos',
-                  style: TextStyle(color: Colors.white)),
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.exit_to_app, color: Colors.red),
-              title: const Text(
-                'Sair',
-                style: TextStyle(color: Colors.red),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamedAndRemoveUntil(
-                    context, '/inicial', (route) => false);
-              },
-            ),
-          ],
-        ),
-      ),
-
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: treinos.length,

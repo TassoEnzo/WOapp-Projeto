@@ -53,8 +53,7 @@ class AtualizarDadosControlador extends ChangeNotifier {
         },
       );
     } catch (e) {
-      print("Falha ao enviar e-mail: $e");
+      debugPrint("Falha ao enviar e-mail: $e");
     }
   }
 }
-

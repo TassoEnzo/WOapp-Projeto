@@ -39,8 +39,7 @@ class PainelUsuario {
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(
-                        child:
-                            CircularProgressIndicator(color: Colors.white),
+                        child: CircularProgressIndicator(color: Colors.white),
                       );
                     }
 
@@ -94,8 +93,7 @@ class PainelUsuario {
                         const Divider(color: Colors.white24),
 
                         ListTile(
-                          leading:
-                              const Icon(Icons.edit, color: Colors.white),
+                          leading: const Icon(Icons.edit, color: Colors.white),
                           title: const Text(
                             'Atualizar Dados',
                             style: TextStyle(color: Colors.white),
@@ -105,7 +103,7 @@ class PainelUsuario {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => AtualizarDadosPage(
+                                builder: (_) => AtualizarDadosPagina(
                                   nomeAtual: nome,
                                   emailAtual: email,
                                 ),
@@ -127,10 +125,16 @@ class PainelUsuario {
                             ),
                           ),
                           onTap: () async {
+                            // ✔ FECHA O PAINEL ANTES DO AWAIT
                             Navigator.pop(context);
+
+                            // guarda o context antes do await
+                            final navigator = Navigator.of(context);
+
                             await FirebaseAuth.instance.signOut();
-                            Navigator.pushNamedAndRemoveUntil(
-                              context,
+
+                            // ✔ usa o navigator guardado → sem warning
+                            navigator.pushNamedAndRemoveUntil(
                               '/inicial',
                               (route) => false,
                             );

@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 import '../apresentacao/controladores/atualizar_dados_controlador.dart';
 
-class AtualizarDadosPage extends StatefulWidget {
+class AtualizarDadosPagina extends StatefulWidget {
   final String nomeAtual;
   final String emailAtual;
 
-  const AtualizarDadosPage({
-    Key? key,
+  const AtualizarDadosPagina({
+    super.key,               // ✔ use_super_parameters resolvido
     required this.nomeAtual,
     required this.emailAtual,
-  }) : super(key: key);
+  });
 
   @override
-  State<AtualizarDadosPage> createState() => _AtualizarDadosPageState();
+  State<AtualizarDadosPagina> createState() => _AtualizarDadosPageState();
 }
 
-class _AtualizarDadosPageState extends State<AtualizarDadosPage> {
+class _AtualizarDadosPageState extends State<AtualizarDadosPagina> {
   final _formKey = GlobalKey<FormState>();
   final _controlador = AtualizarDadosControlador();
 
@@ -48,15 +48,22 @@ class _AtualizarDadosPageState extends State<AtualizarDadosPage> {
         novoEmail: _emailController.text.trim(),
       );
 
+      // ✔ evita erro use_build_context_synchronously
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Dados atualizados com sucesso!')),
       );
     } catch (e) {
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro: $e')),
       );
     } finally {
-      setState(() => _carregando = false);
+      if (mounted) {
+        setState(() => _carregando = false);
+      }
     }
   }
 

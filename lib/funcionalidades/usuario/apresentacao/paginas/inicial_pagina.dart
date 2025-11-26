@@ -18,6 +18,8 @@ class _PaginaInicioState extends State<InicioPagina> {
   final emailController = TextEditingController();
   final senhaController = TextEditingController();
 
+  bool _mostrarSenha = false;
+
   @override
   void dispose() {
     emailController.dispose();
@@ -62,12 +64,24 @@ class _PaginaInicioState extends State<InicioPagina> {
               const SizedBox(height: 16),
               TextField(
                 controller: senhaController,
-                obscureText: true,
+                obscureText: !_mostrarSenha,
                 style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
                   hintText: "Senha",
                   hintStyle: const TextStyle(color: Colors.white70),
                   prefixIcon: const Icon(Icons.lock, color: Colors.white70),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _mostrarSenha ? Icons.visibility : Icons.visibility_off,
+                      color: Colors.white70,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _mostrarSenha = !_mostrarSenha;
+                      });
+                    },
+                  ),
+
                   filled: true,
                   fillColor: const Color(0xFF7A8F85),
                   border: OutlineInputBorder(
@@ -76,6 +90,7 @@ class _PaginaInicioState extends State<InicioPagina> {
                   ),
                 ),
               ),
+
               const SizedBox(height: 24),
               loginCtrl.carregando
                   ? const Center(

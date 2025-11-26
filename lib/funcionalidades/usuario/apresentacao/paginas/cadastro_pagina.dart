@@ -15,6 +15,8 @@ class _CadastroPaginaState extends State<CadastroPagina> {
   final emailController = TextEditingController();
   final senhaController = TextEditingController();
 
+  bool _mostrarSenha = false;
+
   @override
   void dispose() {
     nomeController.dispose();
@@ -90,19 +92,33 @@ class _CadastroPaginaState extends State<CadastroPagina> {
               const SizedBox(height: 20),
               TextField(
                 controller: senhaController,
-                obscureText: true,
+                obscureText: !_mostrarSenha,
                 style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: "Senha",
-                  labelStyle: TextStyle(color: Colors.white70),
-                  enabledBorder: UnderlineInputBorder(
+                  labelStyle: const TextStyle(color: Colors.white70),
+
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _mostrarSenha ? Icons.visibility : Icons.visibility_off,
+                      color: Colors.white70,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _mostrarSenha = !_mostrarSenha;
+                      });
+                    },
+                  ),
+
+                  enabledBorder: const UnderlineInputBorder(
                     borderSide: BorderSide(color: Colors.white54),
                   ),
-                  focusedBorder: UnderlineInputBorder(
+                  focusedBorder: const UnderlineInputBorder(
                     borderSide: BorderSide(color: Colors.white),
                   ),
                 ),
               ),
+
               const SizedBox(height: 30),
               cadastroCtrl.carregando
                   ? const Center(

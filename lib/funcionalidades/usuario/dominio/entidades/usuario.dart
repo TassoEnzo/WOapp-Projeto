@@ -2,5 +2,12 @@ class Usuario {
   final String id;
   final String nome;
   final String email;
-  Usuario({required this.id, required this.nome, required this.email});
+  final String? fotoUrl;
+
+  Usuario({
+    required this.id,
+    required this.nome,
+    required this.email,
+    this.fotoUrl,
+  });
 }

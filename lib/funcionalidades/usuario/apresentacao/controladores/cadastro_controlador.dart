@@ -46,6 +46,7 @@ class CadastroControlador extends ChangeNotifier {
         'nome': nome,
         'email': email,
         'nivel': null,
+        'fotoUrl': null, 
         'criadoEm': DateTime.now(),
       });
       carregando = false;

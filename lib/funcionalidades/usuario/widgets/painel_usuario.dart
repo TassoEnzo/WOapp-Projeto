@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -37,25 +38,25 @@ class PainelUsuario {
                       .doc(user?.uid)
                       .get(),
                   builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
+                    if (!snapshot.hasData) {
                       return const Center(
                         child: CircularProgressIndicator(color: Colors.white),
                       );
                     }
 
-                    if (!snapshot.hasData || !snapshot.data!.exists) {
-                      return const Center(
-                        child: Text(
-                          "Bem-vindo",
-                          style: TextStyle(color: Colors.white, fontSize: 18),
-                        ),
-                      );
-                    }
-
                     final dados =
-                        snapshot.data!.data() as Map<String, dynamic>;
+                        snapshot.data!.data() as Map<String, dynamic>? ?? {};
+
                     final nome = dados["nome"] ?? "Usuário";
                     final email = dados["email"] ?? "";
+                    final fotoBase64 = dados["fotoBase64"];
+
+                    ImageProvider avatar;
+                    if (fotoBase64 != null) {
+                      avatar = MemoryImage(base64Decode(fotoBase64));
+                    } else {
+                      avatar = const AssetImage('assets/images/avatar.png');
+                    }
 
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -65,8 +66,7 @@ class PainelUsuario {
                             children: [
                               CircleAvatar(
                                 radius: 50,
-                                backgroundImage: const AssetImage(
-                                    'assets/images/avatar.png'),
+                                backgroundImage: avatar,
                                 backgroundColor: Colors.grey[700],
                               ),
                               const SizedBox(height: 12),
@@ -77,13 +77,14 @@ class PainelUsuario {
                                   fontSize: 18,
                                   fontWeight: FontWeight.w600,
                                 ),
-                                textAlign: TextAlign.center,
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 email,
                                 style: const TextStyle(
-                                    color: Colors.white70, fontSize: 13),
+                                  color: Colors.white70,
+                                  fontSize: 13,
+                                ),
                               ),
                             ],
                           ),
@@ -100,6 +101,7 @@ class PainelUsuario {
                           ),
                           onTap: () {
                             Navigator.pop(context);
+
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -115,8 +117,7 @@ class PainelUsuario {
                         const Spacer(),
 
                         ListTile(
-                          leading:
-                              const Icon(Icons.exit_to_app, color: Colors.red),
+                          leading: const Icon(Icons.exit_to_app, color: Colors.red),
                           title: const Text(
                             'Sair',
                             style: TextStyle(
@@ -125,18 +126,15 @@ class PainelUsuario {
                             ),
                           ),
                           onTap: () async {
-                            // ✔ FECHA O PAINEL ANTES DO AWAIT
                             Navigator.pop(context);
 
-                            // guarda o context antes do await
                             final navigator = Navigator.of(context);
 
                             await FirebaseAuth.instance.signOut();
 
-                            // ✔ usa o navigator guardado → sem warning
                             navigator.pushNamedAndRemoveUntil(
                               '/inicial',
-                              (route) => false,
+                              (_) => false,
                             );
                           },
                         ),
@@ -150,11 +148,9 @@ class PainelUsuario {
         );
       },
       transitionBuilder: (context, animation, secondaryAnimation, child) {
-        final tween = Tween(begin: const Offset(1.0, 0.0), end: Offset.zero);
         return SlideTransition(
-          position: tween.animate(
-            CurvedAnimation(parent: animation, curve: Curves.easeOut),
-          ),
+          position: Tween(begin: const Offset(1, 0), end: Offset.zero)
+              .animate(animation),
           child: child,
         );
       },

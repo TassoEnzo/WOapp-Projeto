@@ -62,6 +62,7 @@ class TreinoPagina extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: const Color(0xFF1B2B2A),
         elevation: 0,
+        automaticallyImplyLeading: false,
         title: Text("Nível ${nivel[0].toUpperCase()}${nivel.substring(1)}"),
       ),
       body: ListView.builder(

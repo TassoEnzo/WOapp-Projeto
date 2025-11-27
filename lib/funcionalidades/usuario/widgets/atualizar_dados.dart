@@ -1,4 +1,9 @@
+import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import '../apresentacao/controladores/atualizar_dados_controlador.dart';
 
 class AtualizarDadosPagina extends StatefulWidget {
@@ -6,7 +11,7 @@ class AtualizarDadosPagina extends StatefulWidget {
   final String emailAtual;
 
   const AtualizarDadosPagina({
-    super.key,               // ✔ use_super_parameters resolvido
+    super.key,
     required this.nomeAtual,
     required this.emailAtual,
   });
@@ -17,8 +22,6 @@ class AtualizarDadosPagina extends StatefulWidget {
 
 class _AtualizarDadosPageState extends State<AtualizarDadosPagina> {
   final _formKey = GlobalKey<FormState>();
-  final _controlador = AtualizarDadosControlador();
-
   late TextEditingController _nomeController;
   late TextEditingController _emailController;
   bool _carregando = false;
@@ -26,6 +29,12 @@ class _AtualizarDadosPageState extends State<AtualizarDadosPagina> {
   @override
   void initState() {
     super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<AtualizarDadosControlador>().carregarFotoInicial();
+    });
+
     _nomeController = TextEditingController(text: widget.nomeAtual);
     _emailController = TextEditingController(text: widget.emailAtual);
   }
@@ -37,18 +46,62 @@ class _AtualizarDadosPageState extends State<AtualizarDadosPagina> {
     super.dispose();
   }
 
+  Future<void> _selecionarFoto() async {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.black87,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => SizedBox(
+        height: 160,
+        child: Column(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo, color: Colors.white),
+              title: const Text("Escolher da Galeria",
+                  style: TextStyle(color: Colors.white)),
+              onTap: () async {
+                Navigator.pop(context);
+                final img = await ImagePicker().pickImage(source: ImageSource.gallery);
+                if (img != null) _enviarFoto(File(img.path));
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: Colors.white),
+              title: const Text("Tirar Foto",
+                  style: TextStyle(color: Colors.white)),
+              onTap: () async {
+                Navigator.pop(context);
+                final img = await ImagePicker().pickImage(source: ImageSource.camera);
+                if (img != null) _enviarFoto(File(img.path));
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _enviarFoto(File arquivo) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    final ctrl = context.read<AtualizarDadosControlador>();
+    await ctrl.atualizarFoto(arquivo: arquivo, uid: uid);
+  }
+
   Future<void> _atualizar() async {
     if (!_formKey.currentState!.validate()) return;
-
     setState(() => _carregando = true);
 
     try {
-      await _controlador.atualizarDados(
+      final ctrl = context.read<AtualizarDadosControlador>();
+      await ctrl.atualizarDados(
         nome: _nomeController.text.trim(),
         novoEmail: _emailController.text.trim(),
       );
 
-      // ✔ evita erro use_build_context_synchronously
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -60,15 +113,22 @@ class _AtualizarDadosPageState extends State<AtualizarDadosPagina> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro: $e')),
       );
-    } finally {
-      if (mounted) {
-        setState(() => _carregando = false);
-      }
     }
+
+    if (mounted) setState(() => _carregando = false);
   }
 
   @override
   Widget build(BuildContext context) {
+    final ctrl = context.watch<AtualizarDadosControlador>();
+
+    ImageProvider avatar;
+    if (ctrl.fotoBase64 != null) {
+      avatar = MemoryImage(base64Decode(ctrl.fotoBase64!));
+    } else {
+      avatar = const AssetImage("assets/images/avatar.png");
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFF1B2B2A),
       appBar: AppBar(
@@ -79,7 +139,6 @@ class _AtualizarDadosPageState extends State<AtualizarDadosPagina> {
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Container(
-          width: double.infinity,
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: const Color(0xFF2F443F),
@@ -88,54 +147,54 @@ class _AtualizarDadosPageState extends State<AtualizarDadosPagina> {
           child: Form(
             key: _formKey,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  "Nome",
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white70,
+                GestureDetector(
+                  onTap: _selecionarFoto,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 3),
+                        ),
+                        child: CircleAvatar(
+                          radius: 55,
+                          backgroundImage: avatar,
+                        ),
+                      ),
+
+                      Positioned(
+                        right: -5,
+                        bottom: -5,
+                        child: Container(
+                          height: 36,
+                          width: 36,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.add,
+                              size: 22, color: Colors.black87),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 6),
-                TextFormField(
-                  controller: _nomeController,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: const Color(0xFF1E2E2D),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
+
+                if (ctrl.carregandoFoto)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 10),
+                    child: CircularProgressIndicator(color: Colors.white),
                   ),
-                  validator: (v) =>
-                      v == null || v.isEmpty ? 'Digite seu nome' : null,
-                ),
+
                 const SizedBox(height: 20),
 
-                const Text(
-                  "E-mail",
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white70,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                TextFormField(
-                  controller: _emailController,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: const Color(0xFF1E2E2D),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                  validator: (v) =>
-                      v == null || v.isEmpty ? 'Digite seu e-mail' : null,
-                ),
+                _campo("Nome", _nomeController),
+                const SizedBox(height: 20),
+
+                _campo("E-mail", _emailController),
 
                 const SizedBox(height: 30),
 
@@ -145,21 +204,12 @@ class _AtualizarDadosPageState extends State<AtualizarDadosPagina> {
                     onPressed: _carregando ? null : _atualizar,
                     icon: const Icon(Icons.save),
                     label: _carregando
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
+                        ? const CircularProgressIndicator(color: Colors.white)
                         : const Text("Salvar alterações"),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.black87,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 14,
-                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
@@ -171,6 +221,30 @@ class _AtualizarDadosPageState extends State<AtualizarDadosPagina> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _campo(String label, TextEditingController c) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(color: Colors.white70)),
+        const SizedBox(height: 6),
+        TextFormField(
+          controller: c,
+          style: const TextStyle(color: Colors.white),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: const Color(0xFF1E2E2D),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+          ),
+          validator: (v) =>
+              v == null || v.isEmpty ? 'Digite seu $label' : null,
+        ),
+      ],
     );
   }
 }

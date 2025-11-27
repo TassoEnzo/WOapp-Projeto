@@ -91,7 +91,6 @@ class _ExercicioVideoPaginaState extends State<ExercicioVideoPagina> {
               children: [
                 const SizedBox(height: 16),
 
-                /// PLAYER AQUI
                 Padding(
                   padding: const EdgeInsets.all(12.0),
                   child: ClipRRect(

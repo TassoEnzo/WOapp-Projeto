@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
+import '../servicos/permissoes_servico.dart';
 import '../apresentacao/controladores/atualizar_dados_controlador.dart';
 
 class AtualizarDadosPagina extends StatefulWidget {
@@ -29,7 +30,6 @@ class _AtualizarDadosPageState extends State<AtualizarDadosPagina> {
   @override
   void initState() {
     super.initState();
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<AtualizarDadosControlador>().carregarFotoInicial();
@@ -47,6 +47,17 @@ class _AtualizarDadosPageState extends State<AtualizarDadosPagina> {
   }
 
   Future<void> _selecionarFoto() async {
+    final ok = await PermissoesServico.solicitarPermissoes();
+    if (!ok) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Permissões negadas!")),
+      );
+      return;
+    }
+
+    final ctrl = context.read<AtualizarDadosControlador>();
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.black87,
@@ -63,8 +74,18 @@ class _AtualizarDadosPageState extends State<AtualizarDadosPagina> {
                   style: TextStyle(color: Colors.white)),
               onTap: () async {
                 Navigator.pop(context);
-                final img = await ImagePicker().pickImage(source: ImageSource.gallery);
-                if (img != null) _enviarFoto(File(img.path));
+                final img = await ImagePicker().pickImage(
+                  source: ImageSource.gallery,
+                  maxWidth: 1024,
+                  maxHeight: 1024,
+                  imageQuality: 85,
+                );
+                if (img != null) {
+                  await ctrl.atualizarFoto(
+                    arquivo: File(img.path),
+                    uid: FirebaseAuth.instance.currentUser!.uid,
+                  );
+                }
               },
             ),
             ListTile(
@@ -73,8 +94,18 @@ class _AtualizarDadosPageState extends State<AtualizarDadosPagina> {
                   style: TextStyle(color: Colors.white)),
               onTap: () async {
                 Navigator.pop(context);
-                final img = await ImagePicker().pickImage(source: ImageSource.camera);
-                if (img != null) _enviarFoto(File(img.path));
+                final img = await ImagePicker().pickImage(
+                  source: ImageSource.camera,
+                  maxWidth: 1024,
+                  maxHeight: 1024,
+                  imageQuality: 85,
+                );
+                if (img != null) {
+                  await ctrl.atualizarFoto(
+                    arquivo: File(img.path),
+                    uid: FirebaseAuth.instance.currentUser!.uid,
+                  );
+                }
               },
             ),
           ],
@@ -83,35 +114,27 @@ class _AtualizarDadosPageState extends State<AtualizarDadosPagina> {
     );
   }
 
-  Future<void> _enviarFoto(File arquivo) async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return;
-
-    final ctrl = context.read<AtualizarDadosControlador>();
-    await ctrl.atualizarFoto(arquivo: arquivo, uid: uid);
-  }
-
   Future<void> _atualizar() async {
     if (!_formKey.currentState!.validate()) return;
+
     setState(() => _carregando = true);
 
+    final ctrl = context.read<AtualizarDadosControlador>();
+
     try {
-      final ctrl = context.read<AtualizarDadosControlador>();
       await ctrl.atualizarDados(
         nome: _nomeController.text.trim(),
         novoEmail: _emailController.text.trim(),
       );
 
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Dados atualizados com sucesso!')),
+        const SnackBar(content: Text("Dados atualizados com sucesso!")),
       );
     } catch (e) {
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro: $e')),
+        SnackBar(content: Text("Erro: $e")),
       );
     }
 
@@ -123,8 +146,13 @@ class _AtualizarDadosPageState extends State<AtualizarDadosPagina> {
     final ctrl = context.watch<AtualizarDadosControlador>();
 
     ImageProvider avatar;
+
     if (ctrl.fotoBase64 != null) {
-      avatar = MemoryImage(base64Decode(ctrl.fotoBase64!));
+      try {
+        avatar = MemoryImage(base64Decode(ctrl.fotoBase64!));
+      } catch (_) {
+        avatar = const AssetImage("assets/images/avatar.png");
+      }
     } else {
       avatar = const AssetImage("assets/images/avatar.png");
     }
@@ -164,14 +192,13 @@ class _AtualizarDadosPageState extends State<AtualizarDadosPagina> {
                           backgroundImage: avatar,
                         ),
                       ),
-
                       Positioned(
                         right: -5,
                         bottom: -5,
                         child: Container(
                           height: 36,
                           width: 36,
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             color: Colors.white,
                             shape: BoxShape.circle,
                           ),
@@ -241,8 +268,9 @@ class _AtualizarDadosPageState extends State<AtualizarDadosPagina> {
               borderSide: BorderSide.none,
             ),
           ),
-          validator: (v) =>
-              v == null || v.isEmpty ? 'Digite seu $label' : null,
+          validator: (v) => v == null || v.isEmpty
+              ? "Digite seu $label"
+              : null,
         ),
       ],
     );
